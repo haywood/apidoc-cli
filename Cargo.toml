@@ -1,0 +1,13 @@
+[package]
+
+name = "apidoc-cli"
+version = "0.0.1"
+authors = ["Michael Reed <mreed@gilt.com>"]
+
+[dependencies]
+chrono = "*"
+docopt = "*"
+hyper = "*"
+rustc-serialize = "*"
+toml = "*"
+uuid = "*"
