@@ -1,5 +1,7 @@
 pub mod client {
     extern crate hyper;
+    use rustc_serialize::json;
+    use super::models;
 
     pub struct Validations {
         base_url: String,
@@ -20,6 +22,51 @@ pub mod client {
             url.push_str("/validations");
             client.post(&url[..]).body(value).send()
         }
+    }
+
+    pub struct Versions {
+        base_url: String,
+        token: String
+    }
+
+    impl Versions {
+        pub fn new(base_url: String, token: String) -> Versions {
+            Versions {
+                base_url: base_url,
+                token: token
+            }
+        }
+
+        pub fn put_by_organization_key_and_application_key_and_version(
+            &self,
+            organization_key: &str,
+            application_key: &str,
+            version: &str,
+            version_form: models::VersionForm
+        ) -> hyper::HttpResult<hyper::client::Response> {
+            let mut client = hyper::client::Client::new();
+            let mut url = self.base_url.clone();
+            url.push('/');
+            url.push_str(organization_key);
+            url.push('/');
+            url.push_str(application_key);
+            url.push('/');
+            url.push_str(version);
+            // TODO handle error instead of using unwrap
+            let json = json::encode(&version_form).unwrap();
+            let scheme = hyper::header::Basic {
+                username: self.token.clone(),
+                password: None
+            };
+            client.put(&url[..]).body(&json[..])
+                .header(hyper::header::Authorization(scheme))
+                .header(hyper::header::ContentType(application_json()))
+                .send()
+        }
+    }
+
+    fn application_json() -> hyper::mime::Mime {
+        "application/json".parse().unwrap()
     }
 }
 

@@ -18,10 +18,11 @@ fn main() {
     let usage = format!("
 Usage:
     apidoc [options] check <input>
+    apidoc [options] push <tag> <input>
 
 Options:
-    --config, -c <path-to-config>  [Default: {}/.apidoc/config]
-    --help, -h  Print this help.
+    --config <path-to-config>  [Default: {}/.apidoc/config]
+    --help  Print this help.
 ", home_dir.display());
 
     let args = Docopt::new(usage)
@@ -32,10 +33,15 @@ Options:
     let mut cli = Cli::new(config);
     let result = if args.get_bool("check") {
         cli.check(args.get_str("<input>"))
+    } else if args.get_bool("push") {
+        let tag = args.get_str("<tag>");
+        let input = args.get_str("<input>");
+        cli.push(tag, input)
     } else {
         panic!("unkown command")
     };
-    result.map_err(|err| {
-        writeln!(&mut stderr(), "{}", err.description()).unwrap();
-    });
+    match result {
+        Ok(_) => (),
+        Err(err) => writeln!(&mut stderr(), "{}", err.description()).unwrap()
+    }
 }
