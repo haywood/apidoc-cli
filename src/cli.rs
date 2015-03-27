@@ -39,7 +39,7 @@ impl Display for CliError {
 }
 
 impl Config {
-    pub fn load(path: &str) -> Result<Config, CliError> {
+    pub fn load(path: &str, profile_name: &str) -> Result<Config, CliError> {
         File::open(path).map_err(|err| {
             CliError { desc: format!("failed to open config at {}: {}",
                                      path, err.description().to_string()) }
@@ -55,10 +55,17 @@ impl Config {
                 }
                 CliError { desc: desc }
             }).and_then(|value: toml::Value| {
-                let mut decoder = toml::Decoder::new(value);
-                Config::decode(&mut decoder).map_err(|err| {
-                    CliError { desc: err.description().to_string() }
-                })
+                match value.lookup(profile_name) {
+                    None => Err(CliError {
+                        desc: format!("no profile found for {}", profile_name)
+                    }),
+                    Some(profile) => {
+                        let mut decoder = toml::Decoder::new(profile.clone());
+                        Config::decode(&mut decoder).map_err(|err| {
+                            CliError { desc: err.description().to_string() }
+                        })
+                    }
+                }
             })
         })
     }
@@ -94,12 +101,17 @@ impl Cli {
                     CliError { desc: err.description().to_string() }
                 }).and_then(|json| {
                     let mut decoder = json::Decoder::new(json);
-                    models::Validation::decode(&mut decoder).map(|validation| {
-                        for err in validation.errors {
-                            writeln!(&mut self.err, "validation error: {}", err).unwrap();
-                        }
-                    }).map_err(|err| {
+                    models::Validation::decode(&mut decoder).map_err(|err| {
                         CliError { desc: err.description().to_string() }
+                    }).and_then(|validation| {
+                        if validation.valid {
+                            Ok(())
+                        } else {
+                            for err in validation.errors {
+                                writeln!(&mut self.err, "validation error: {}", err).unwrap();
+                            }
+                            Err(CliError { desc: "input invalid".to_string() })
+                        }
                     })
                 })
             })

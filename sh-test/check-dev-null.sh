@@ -1,0 +1,1 @@
+! apidoc check /dev/null

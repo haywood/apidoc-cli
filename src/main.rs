@@ -1,4 +1,5 @@
 #![feature(io)]
+#![feature(exit_status)]
 extern crate rustc_serialize;
 extern crate docopt;
 
@@ -22,6 +23,7 @@ Usage:
 
 Options:
     --config <path-to-config>  [Default: {}/.apidoc/config]
+    --profile <profile>  [Default: default]
     --help  Print this help.
 ", home_dir.display());
 
@@ -29,19 +31,24 @@ Options:
         .and_then(|d| d.parse())
         .unwrap_or_else(|e| e.exit());
     let config_path = args.get_str("--config");
-    let config = Config::load(config_path).unwrap();
-    let mut cli = Cli::new(config);
-    let result = if args.get_bool("check") {
-        cli.check(args.get_str("<input>"))
-    } else if args.get_bool("push") {
-        let tag = args.get_str("<tag>");
-        let input = args.get_str("<input>");
-        cli.push(tag, input)
-    } else {
-        panic!("unkown command")
-    };
+    let profile_name = args.get_str("--profile");
+    let result = Config::load(config_path, profile_name).and_then(|config| {
+        let mut cli = Cli::new(config);
+        if args.get_bool("check") {
+            cli.check(args.get_str("<input>"))
+        } else if args.get_bool("push") {
+            let tag = args.get_str("<tag>");
+            let input = args.get_str("<input>");
+            cli.push(tag, input)
+        } else {
+            panic!("unkown command")
+        }
+    });
     match result {
         Ok(_) => (),
-        Err(err) => writeln!(&mut stderr(), "{}", err.description()).unwrap()
+        Err(err) => {
+            writeln!(&mut stderr(), "{}", err.description()).unwrap();
+            env::set_exit_status(1)
+        }
     }
 }
