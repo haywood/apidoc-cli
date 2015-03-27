@@ -20,11 +20,12 @@ fn main() {
 Usage:
     apidoc [options] check <input>
     apidoc [options] push <tag> <input>
+    apidoc --help
 
 Options:
     --config <path-to-config>  [Default: {}/.apidoc/config]
     --profile <profile>  [Default: default]
-    --help  Print this help.
+    --help, -h  Print this help.
 ", home_dir.display());
 
     let args = Docopt::new(usage)
