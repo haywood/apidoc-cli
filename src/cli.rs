@@ -118,6 +118,28 @@ impl Cli {
         })
     }
 
+    pub fn generate(&mut self, tag: &str, target: &str) -> Result<(), CliError> {
+        Cli::parse_tag(tag).and_then(|(org_key, app_key, version)| {
+            self.code().get_by_organization_key_and_application_key_and_version_and_generator_key(
+                org_key, app_key, version, target).map_err(|err| {
+                    CliError { desc: err.description().to_string() }
+                }).and_then(|mut res| {
+                    Json::from_reader(&mut res).map_err(|err| {
+                        CliError { desc: err.description().to_string() }
+                    }).and_then(|json| {
+                        let mut decoder = json::Decoder::new(json);
+                        models::Code::decode(&mut decoder).map_err(|err| {
+                            CliError { desc: err.description().to_string() }
+                        }).and_then(|code| {
+                            writeln!(&mut self.out, "{}", code.source).map_err(|err| {
+                                CliError { desc: err.description().to_string() }
+                            })
+                        })
+                    })
+                })
+        })
+    }
+
     pub fn push(&self, tag: &str, path: &str) -> Result<(), CliError> {
         Cli::parse_tag(tag).and_then(|(org_key, app_key, version)| {
             File::open(path)
@@ -177,6 +199,12 @@ impl Cli {
                 }
             }
         }
+    }
+
+    fn code(&self) -> client::Code {
+        let api_url = self.config.api_url.clone().unwrap_or(
+            "http://api.apidoc.me".to_string());
+        client::Code::new(api_url, self.config.token.clone())
     }
 
     fn validations(&self) -> client::Validations {

@@ -19,6 +19,7 @@ fn main() {
     let usage = format!("
 Usage:
     apidoc [options] check <input>
+    apidoc [options] generate <tag> <target>
     apidoc [options] push <tag> <input>
     apidoc --help
 
@@ -37,6 +38,10 @@ Options:
         let mut cli = Cli::new(config);
         if args.get_bool("check") {
             cli.check(args.get_str("<input>"))
+        } else if args.get_bool("generate") {
+            let tag = args.get_str("<tag>");
+            let target = args.get_str("<target>");
+            cli.generate(tag, target)
         } else if args.get_bool("push") {
             let tag = args.get_str("<tag>");
             let input = args.get_str("<input>");
