@@ -1,4 +1,3 @@
-#![feature(io)]
 #![feature(exit_status)]
 extern crate rustc_serialize;
 extern crate docopt;
@@ -25,6 +24,7 @@ struct Args {
 
     flag_config: String,
     flag_profile: String,
+    flag_visibility: apidoc::models::Visibility,
 }
 
 impl Args {
@@ -47,8 +47,9 @@ Usage:
     apidoc --help
 
 Options:
-    --config <path-to-config>  [Default: {}/.apidoc/config]
-    --profile <profile>  [Default: default]
+    --config <path-to-config>   [Default: {}/.apidoc/config]
+    --visibility <visibility>   [Default: user]
+    --profile <profile>         [Default: default]
     --help, -h  Print this help.
 ", home_dir.display());
 
@@ -67,7 +68,7 @@ Options:
             cli.generate(tag, target)
         } else if args.cmd_push {
             let ref tag = args.arg_tag;
-            cli.push(tag, args.spec())
+            cli.push(tag, args.spec(), &args.flag_visibility)
         } else {
             panic!("unkown command")
         }

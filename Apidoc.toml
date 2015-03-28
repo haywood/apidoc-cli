@@ -1,0 +1,7 @@
+spec = apidoc.json
+
+[dependencies.gilt/apidoc-api:0.8.18]
+ning_1_9_client = apidoc-client/src/main/scala/Apidoc.scala
+
+[dependencies.gilt/iris-hub:0.44.0]
+ning_1_9_client = iris-hub-client/src/main/scala/IrisHub.scala

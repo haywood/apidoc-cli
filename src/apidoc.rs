@@ -45,15 +45,13 @@ pub mod client {
     }
 
     pub struct Validations {
-        base_url: String,
-        token: String
+        base_url: String
     }
 
     impl Validations {
-        pub fn new(base_url: String, token: String) -> Validations {
+        pub fn new(base_url: String) -> Validations {
             Validations {
-                base_url: base_url,
-                token: token
+                base_url: base_url
             }
         }
 
@@ -119,6 +117,7 @@ pub mod models {
     use rustc_serialize::Decoder;
     use rustc_serialize::Encodable;
     use rustc_serialize::Encoder;
+    use std;
 
     /**
      * An application has a name and multiple versions of its API.
@@ -298,12 +297,13 @@ pub mod models {
      */
     #[derive(RustcEncodable, RustcDecodable)]
     pub struct Original {
-        pub original_type: OriginalType,
+        // TODO pub type: OriginalType,
         pub data: String
     }
 
     #[derive(RustcEncodable, RustcDecodable)]
     pub struct OriginalForm {
+        // TODO pub type: Option<OriginalType>,
         pub original_type: Option<OriginalType>,
         pub data: String
     }
@@ -613,6 +613,26 @@ pub mod models {
         UNDEFINED(String)
     }
 
+    impl Visibility {
+        pub fn valid(&self) -> Result<&Self, &Self> {
+            match self {
+                &Visibility::UNDEFINED(_) => Err(self),
+                _ => Ok(self)
+            }
+        }
+    }
+
+    impl std::fmt::Display for Visibility {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            match self {
+                &Visibility::User => f.write_str("user"),
+                &Visibility::Organization => f.write_str("organization"),
+                &Visibility::Public => f.write_str("public"),
+                &Visibility::UNDEFINED(ref value) => f.write_str(value)
+            }
+        }
+    }
+
     impl Encodable for Visibility {
         fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
             match self {
@@ -620,6 +640,17 @@ pub mod models {
                 &Visibility::Organization => e.emit_str("organization"),
                 &Visibility::Public => e.emit_str("public"),
                 &Visibility::UNDEFINED(ref value) => e.emit_str(value)
+            }
+        }
+    }
+
+    impl Clone for Visibility {
+        fn clone(&self) -> Visibility {
+            match self {
+                &Visibility::User => Visibility::User,
+                &Visibility::Organization => Visibility::Organization,
+                &Visibility::Public => Visibility::Public,
+                &Visibility::UNDEFINED(ref value) => Visibility::UNDEFINED(value.clone()),
             }
         }
     }

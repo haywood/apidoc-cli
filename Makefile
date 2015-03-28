@@ -1,8 +1,7 @@
 build:
 	cargo build
 
-test:
-	cargo test
+test: build
 	./sh-test.sh
 
 install: build

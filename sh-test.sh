@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 LOG="$(mktemp -t apidoc-cli-test).log"
 cd $(dirname $0)
