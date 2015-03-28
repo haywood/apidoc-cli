@@ -293,17 +293,64 @@ pub mod models {
     /**
      * Represents the original input used to create an application version
      */
-    #[derive(RustcEncodable, RustcDecodable)]
     pub struct Original {
-        // TODO pub type: OriginalType,
+        pub original_type: OriginalType,
         pub data: String
     }
 
-    #[derive(RustcEncodable, RustcDecodable)]
+    impl Encodable for Original {
+        fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+            e.emit_struct("original", 2, |e| {
+                try!(e.emit_struct_field("type", 0, |e| self.original_type.encode(e)));
+                try!(e.emit_struct_field("data", 1, |e| self.data.encode(e)));
+                Ok(())
+            })
+        }
+    }
+
+    impl Decodable for Original {
+        fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
+            d.read_struct("original", 2, |d| {
+                let original_type: OriginalType = try!(
+                    d.read_struct_field("type", 0, OriginalType::decode));
+                let data: String = try!(
+                    d.read_struct_field("data", 1, |d| d.read_str()));
+                Ok(Original {
+                    original_type: original_type,
+                    data: data
+                })
+            })
+        }
+    }
+
     pub struct OriginalForm {
-        // TODO pub type: Option<OriginalType>,
         pub original_type: Option<OriginalType>,
         pub data: String
+    }
+
+    impl Encodable for OriginalForm {
+        fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+            e.emit_struct("original_form", 2, |e| {
+                try!(e.emit_struct_field("type", 0, |e| self.original_type.encode(e)));
+                try!(e.emit_struct_field("data", 1, |e| self.data.encode(e)));
+                Ok(())
+            })
+        }
+    }
+
+    impl Decodable for OriginalForm {
+        fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
+            d.read_struct("original_form", 2, |d| {
+                let original_type: Option<OriginalType> = try!(
+                    d.read_struct_field("type", 0, Option::<OriginalType>::decode));
+                let data: String = try!(
+                    d.read_struct_field("data", 1, |d| d.read_str()));
+                Ok(OriginalForm {
+                    original_type: original_type,
+                    data: data
+                })
+            })
+        }
     }
 
     /**
