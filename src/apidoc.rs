@@ -33,7 +33,6 @@ pub mod client {
             url.push_str(version);
             url.push('/');
             url.push_str(generator_key);
-            // TODO handle error instead of using unwrap
             let scheme = hyper::header::Basic {
                 username: self.token.clone(),
                 password: None
@@ -91,7 +90,6 @@ pub mod client {
             url.push_str(application_key);
             url.push('/');
             url.push_str(version);
-            // TODO handle error instead of using unwrap
             let json = json::encode(&version_form).unwrap();
             let scheme = hyper::header::Basic {
                 username: self.token.clone(),
