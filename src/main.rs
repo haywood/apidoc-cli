@@ -13,14 +13,37 @@ use std::io::Write;
 mod apidoc;
 mod cli;
 
+#[derive(RustcDecodable)]
+struct Args {
+    arg_input: Option<String>,
+    arg_tag: String,
+    arg_target: String,
+
+    cmd_check: bool,
+    cmd_generate: bool,
+    cmd_push: bool,
+
+    flag_config: String,
+    flag_profile: String,
+}
+
+impl Args {
+    fn spec<'a>(&'a self) -> &'a str {
+        match self.arg_input {
+            Some(ref x) => x,
+            None => "api.json"
+        }
+    }
+}
+
 fn main() {
     let home_dir = env::home_dir().expect("unable to get home directory");
 
     let usage = format!("
 Usage:
-    apidoc [options] check <input>
+    apidoc [options] check [<input>]
     apidoc [options] generate <tag> <target>
-    apidoc [options] push <tag> <input>
+    apidoc [options] push <tag> [<input>]
     apidoc --help
 
 Options:
@@ -29,23 +52,22 @@ Options:
     --help, -h  Print this help.
 ", home_dir.display());
 
-    let args = Docopt::new(usage)
-        .and_then(|d| d.parse())
+    let args: Args = Docopt::new(usage)
+        .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
-    let config_path = args.get_str("--config");
-    let profile_name = args.get_str("--profile");
-    let result = Config::load(config_path, profile_name).and_then(|config| {
+    let ref config_path = args.flag_config;
+    let ref profile_name = args.flag_profile;
+    let result = Config::load(&config_path, &profile_name).and_then(|config| {
         let mut cli = Cli::new(config);
-        if args.get_bool("check") {
-            cli.check(args.get_str("<input>"))
-        } else if args.get_bool("generate") {
-            let tag = args.get_str("<tag>");
-            let target = args.get_str("<target>");
+        if args.cmd_check {
+            cli.check(args.spec())
+        } else if args.cmd_generate {
+            let ref tag = args.arg_tag;
+            let ref target = args.arg_target;
             cli.generate(tag, target)
-        } else if args.get_bool("push") {
-            let tag = args.get_str("<tag>");
-            let input = args.get_str("<input>");
-            cli.push(tag, input)
+        } else if args.cmd_push {
+            let ref tag = args.arg_tag;
+            cli.push(tag, args.spec())
         } else {
             panic!("unkown command")
         }
