@@ -1,6 +1,6 @@
 [package]
 
-name = "apidoc-cli"
+name = "apidoc"
 version = "0.0.1"
 authors = ["Michael Reed <mreed@gilt.com>"]
 
