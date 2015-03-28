@@ -116,6 +116,7 @@ pub mod models {
     use rustc_serialize::Encodable;
     use rustc_serialize::Encoder;
     use std;
+    use std::error::Error as StdError;
 
     /**
      * An application has a name and multiple versions of its API.
@@ -138,15 +139,49 @@ pub mod models {
         pub visibility: Visibility
     }
 
-    /* TODO no rustc-serialize support in chrono
-    #[derive(RustcEncodable, RustcDecodable)]
     pub struct Audit {
-        pub createdAt: chrono::DateTime<chrono::UTC>,
-        pub createdBy: ReferenceGuid,
-        pub updatedAt: chrono::DateTime<chrono::UTC>,
-        pub updatedBy: ReferenceGuid
+        pub created_at: chrono::DateTime<chrono::FixedOffset>,
+        pub created_by: ReferenceGuid,
+        pub updated_at: chrono::DateTime<chrono::FixedOffset>,
+        pub updated_by: ReferenceGuid
     }
-    */
+
+    impl ::rustc_serialize::Encodable for Audit {
+        fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+            e.emit_struct("audit", 4, |e| {
+                try!(e.emit_struct_field("created_at", 0, |e| e.emit_str(&self.created_at.to_rfc3339())));
+                try!(e.emit_struct_field("created_by", 1, |e| self.created_by.encode(e)));
+                try!(e.emit_struct_field("updated_at", 2, |e| e.emit_str(&self.updated_at.to_rfc3339())));
+                try!(e.emit_struct_field("updated_by", 3, |e| self.updated_by.encode(e)));
+                Ok(())
+            })
+        }
+    }
+
+    impl ::rustc_serialize::Decodable for Audit {
+        fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
+            d.read_struct("audit", 4, |d| {
+                let created_at = try!(d.read_struct_field("created_at", 0, |d| d.read_str().and_then(|s| {
+                    chrono::DateTime::parse_from_rfc3339(&s).map_err(|err| {
+                        d.error(err.description())
+                    })
+                })));
+                let created_by = try!(d.read_struct_field("created_by", 1, |d| ReferenceGuid::decode(d)));
+                let updated_at = try!(d.read_struct_field("updated_at", 0, |d| d.read_str().and_then(|s| {
+                    chrono::DateTime::parse_from_rfc3339(&s).map_err(|err| {
+                        d.error(err.description())
+                    })
+                })));
+                let updated_by = try!(d.read_struct_field("updated_by", 1, |d| ReferenceGuid::decode(d)));
+                Ok(Audit {
+                    created_at: created_at,
+                    created_by: created_by,
+                    updated_at: updated_at,
+                    updated_by: updated_by,
+                })
+            })
+        }
+    }
 
     /**
      * Separate resource used only for the few actions that require the full token.
@@ -411,7 +446,6 @@ pub mod models {
         pub publication: Publication
     }
 
-    /* TODO can't (de)serialize Audit
     /**
      * A token gives a user access to the API.
      */
@@ -419,11 +453,10 @@ pub mod models {
     pub struct Token {
         pub guid: uuid::Uuid,
         pub user: User,
-        pub maskedToken: String,
+        pub masked_token: String,
         pub description: Option<String>,
         pub audit: Audit
     }
-    */
 
     #[derive(RustcEncodable, RustcDecodable)]
     pub struct TokenForm {
