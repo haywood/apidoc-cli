@@ -41,7 +41,7 @@ impl Display for CliError {
 impl Config {
     pub fn load(path: &str, profile_name: &str) -> Result<Config, CliError> {
         File::open(path).map_err(|err| {
-            CliError { desc: format!("failed to open config at {}: {}",
+            CliError { desc: format!("failed to open config at `{}`: {}",
                                      path, err.description().to_string()) }
         }).and_then(|mut file| {
             let mut buf = String::new();
@@ -88,7 +88,7 @@ impl Cli {
 
     pub fn check(&mut self, path: &str) -> Result<(), CliError> {
         File::open(path).map_err(|err| {
-            CliError { desc: format!("failed to open input at {}: {}",
+            CliError { desc: format!("failed to open input at `{}`: {}",
                                      path, err.description().to_string()) }
         }).and_then(|mut file| {
             let mut input = String::new();
