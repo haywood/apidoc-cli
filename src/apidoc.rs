@@ -629,6 +629,7 @@ pub mod models {
     /**
      * Controls who is able to view this version
      */
+    #[derive(Clone, Debug)]
     pub enum Visibility {
 
         /**
@@ -678,7 +679,7 @@ pub mod models {
         }
     }
 
-    impl Encodable for Visibility {
+    impl ::rustc_serialize::Encodable for Visibility {
         fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
             match self {
                 &Visibility::User => e.emit_str("user"),
@@ -689,18 +690,7 @@ pub mod models {
         }
     }
 
-    impl Clone for Visibility {
-        fn clone(&self) -> Visibility {
-            match self {
-                &Visibility::User => Visibility::User,
-                &Visibility::Organization => Visibility::Organization,
-                &Visibility::Public => Visibility::Public,
-                &Visibility::UNDEFINED(ref value) => Visibility::UNDEFINED(value.clone()),
-            }
-        }
-    }
-
-    impl Decodable for Visibility {
+    impl ::rustc_serialize::Decodable for Visibility {
         fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
             d.read_str().map(|value| {
                 match &value[..] {
