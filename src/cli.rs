@@ -16,7 +16,11 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::stderr;
 use std::io::stdout;
+use std::result::Result as StdResult;
 use std::str::FromStr;
+use self::hyper::client::Response;
+use self::hyper::status::StatusCode;
+
 
 macro_rules! out {
     ($cli:expr, $fmt:expr, $($args:tt)*) => (
@@ -86,6 +90,8 @@ pub struct CliError {
     desc: String
 }
 
+pub type CliResult<T> = StdResult<T, CliError>;
+
 impl CliError {
     fn from_err(err: &Error) -> CliError {
         CliError {
@@ -94,6 +100,13 @@ impl CliError {
     }
 }
 
+// TODO implement support for parsing
+// some kind of project manifest file,
+// resolving dependencies, and generating
+// code for them as described in said file.
+//
+// Thinking that this would be the default
+// mode of the generate command (without args).
 pub struct Project<'a> {
     dependencies: Vec<Revision<'a>>
 }
@@ -189,38 +202,13 @@ impl Cli {
     }
 
     pub fn check(&mut self, path: &str) -> Result<(), CliError> {
-        let mut file = cli_try!(
-            File::open(path),
-            "failed to open input at `{}`: {}",
-            path);
-        let mut input = String::new();
-        file.read_to_string(&mut input).unwrap();
-        let validations = self.validations();
-        let mut res = cli_try!(validations.post(&input[..]));
-        let json = cli_try!(Json::from_reader(&mut res));
-        let mut decoder = json::Decoder::new(json);
-        let validation = cli_try!(models::Validation::decode(&mut decoder));
-        if validation.valid {
-            Ok(())
-        } else {
-            for err in validation.errors {
-                err!(self, "validation error: {}", err);
-            }
-            Err(CliError { desc: "input invalid".to_string() })
-        }
+        let task = Check { path: path };
+        task.run(self)
     }
 
     pub fn generate(&mut self, tag: &str, target: &str) -> Result<(), CliError> {
-        let Revision(Repo(org, app), version) = cli_try!(
-            Revision::from_str(tag));
-        let mut res = cli_try!(self.code()
-            .get_by_organization_key_and_application_key_and_version_and_generator_key(
-                org, app, version, target));
-        Ok(cli_try!(
-            self.handle_response(
-                &mut res,
-                |mut decoder| models::Code::decode(decoder),
-                |mut cli, code| Ok(out!(cli, "{}", code.source)))))
+        let task = Generate { tag: tag, target: target };
+        task.run(self)
     }
 
     pub fn push(
@@ -229,61 +217,8 @@ impl Cli {
         path: &str,
         visibility: &models::Visibility
     ) -> Result<(), CliError> {
-        cli_try!(visibility.valid(), "invalid visiblity: {}");
-        let Revision(Repo(org, app), version) = try!(Revision::from_str(tag));
-        let mut file = cli_try!(
-            File::open(path), "failed to open {}: {}", path);
-        let mut input = String::new();
-        cli_try!(file.read_to_string(&mut input));
-        let form = models::VersionForm {
-            visibility: Some(visibility.clone()),
-            original_form: models::OriginalForm {
-                original_type: None,
-                data: input
-            }
-        };
-        out!(self, "pushing to {}/{}:{}", org, app, version);
-        let mut res = cli_try!(self.versions()
-            .put_by_organization_key_and_application_key_and_version(
-                org, app, version, form));
-        self.handle_response(
-            &mut res,
-            |mut decoder| { models::Version::decode(decoder) },
-            |_, _| { Ok(()) })
-    }
-
-    fn handle_response<
-        T,
-        D: Fn(&mut json::Decoder) -> json::DecodeResult<T>,
-        CB: Fn(&mut Cli, &mut T) -> Result<(), CliError>
-    >(
-        &mut self,
-        mut res: &mut hyper::client::Response,
-        decode: D,
-        cb: CB
-    ) -> Result<(), CliError> {
-        let mut body = String::new();
-        cli_try!(res.read_to_string(&mut body));
-        let status = res.status;
-        let json: Json = cli_try!(
-            body.parse(),
-            "HTTP request failed; status: {}\nbody: {}\ndecode_error: {}",
-            status, body);
-        let mut decoder = json::Decoder::new(json.clone());
-        match decode(&mut decoder) {
-            Ok(mut t) => cb(self, &mut t),
-            Err(original_err) => {
-                let mut decoder = json::Decoder::new(json);
-                let errors = cli_try!(
-                    Vec::<models::Error>::decode(&mut decoder),
-                    "HTTP request failed; status: {}\nbody: {}\noriginal_error: {}\ndecode_error: {}\n",
-                    status, body, original_err);
-                for error in errors {
-                    err!(self, "error: {}", error.message);
-                }
-                Err(CliError { desc: format!("HTTP request failed; status: {}", status) })
-            }
-        }
+        let task = Push { tag: tag, path: path, visibility: visibility };
+        task.run(self)
     }
 
     fn code(&self) -> client::Code {
@@ -302,5 +237,162 @@ impl Cli {
         let api_url = self.config.api_url.clone().unwrap_or(
             "http://api.apidoc.me".to_string());
         client::Versions::new(api_url, self.config.token.clone())
+    }
+}
+
+trait Task {
+    type Result;
+
+    fn perform_request(&self, cli: &mut Cli) -> CliResult<Response>;
+
+    fn parse_json(&self, status: StatusCode, json: Json) -> CliResult<Self::Result>;
+
+    fn handle_result(&self, cli: &mut Cli, result: Self::Result) -> CliResult<()>;
+
+    fn run(&self, cli: &mut Cli) -> CliResult<()> {
+        let mut res = cli_try!(self.perform_request(cli), "HTTP request failed: {}");
+        let status = res.status;
+        let json = cli_try!(
+            Json::from_reader(&mut res),
+            "failed to parse HTTP response body as JSON (status was {}): {}",
+            status);
+        self.handle_result(cli, cli_try!(self.parse_json(status, json)))
+    }
+}
+
+struct Check<'a> {
+    path: &'a str
+}
+
+impl<'a> Task for Check<'a> {
+    type Result = StdResult<models::Validation, models::Validation>;
+
+    fn perform_request(&self, cli: &mut Cli) -> CliResult<Response> {
+        let mut file = cli_try!(
+            File::open(self.path),
+            "failed to open input at `{}`: {}",
+            self.path);
+        let mut input = String::new();
+        cli_try!(
+            file.read_to_string(&mut input),
+            "failed reading from file at `{}`: {}",
+            self.path);
+        let validations = cli.validations();
+        Ok(cli_try!(validations.post(&input[..])))
+    }
+
+    fn parse_json(&self, status: hyper::status::StatusCode, json: Json) -> CliResult<<Check as Task>::Result> {
+        let mut decoder = json::Decoder::new(json);
+        let result = models::Validation::decode(&mut decoder);
+        Ok(cli_try!(match status {
+            hyper::Ok => result.map(|v| Ok(v)),
+            _ => result.map(|v| Err(v))
+        }))
+    }
+
+    fn handle_result(&self, cli: &mut Cli, result: <Check as Task>::Result) -> CliResult<()> {
+        match result {
+            Ok(_) => Ok(()),
+            Err(validation) => {
+                for err in validation.errors {
+                    err!(cli, "validation error: {}", err);
+                }
+                Err(CliError { desc: "input invalid".to_string() })
+            }
+        }
+    }
+}
+
+struct Generate<'a, 'b> {
+    tag: &'a str,
+    target: &'b str
+}
+
+impl<'a, 'b> Task for Generate<'a, 'b> {
+    type Result = StdResult<models::Code, Vec<models::Error>>;
+
+    fn perform_request(&self, cli: &mut Cli) -> CliResult<Response> {
+        let Revision(Repo(org, app), version) = cli_try!(
+            Revision::from_str(self.tag));
+        let client = cli.code();
+        Ok(cli_try!(
+            client.get_by_organization_key_and_application_key_and_version_and_generator_key(
+                org, app, version, self.target)))
+    }
+
+    fn parse_json(&self, status: StatusCode, json: Json) -> CliResult<<Generate as Task>::Result> {
+        let mut decoder = json::Decoder::new(json);
+        Ok(cli_try!(match status {
+            hyper::Ok => {
+                let result = models::Code::decode(&mut decoder);
+                result.map(|c| Ok(c))
+            },
+            _ => {
+                let result = Vec::<models::Error>::decode(&mut decoder);
+                result.map(|e| Err(e))
+            }
+        }))
+    }
+
+    fn handle_result(&self, cli: &mut Cli, result: <Generate as Task>::Result) -> CliResult<()> {
+        match result {
+            Ok(code) => Ok(out!(cli, "{}", code.source)),
+            Err(errors) => {
+                for error in errors {
+                    err!(cli, "error: {}", error.message);
+                }
+                Err(CliError { desc: "got error response from server".to_string() })
+            }
+        }
+    }
+}
+
+struct Push<'a> {
+    tag: &'a str,
+    path: &'a str,
+    visibility: &'a models::Visibility
+}
+
+impl<'a> Task for Push<'a> {
+    type Result = StdResult<models::Version, Vec<models::Error>>;
+
+    fn perform_request(&self, cli: &mut Cli) -> CliResult<Response> {
+        cli_try!(self.visibility.valid(), "invalid visiblity: {}");
+        let Revision(Repo(org, app), version) = try!(Revision::from_str(self.tag));
+        let mut file = cli_try!(
+            File::open(self.path), "failed to open {}: {}", self.path);
+        let mut input = String::new();
+        cli_try!(file.read_to_string(&mut input));
+        let form = models::VersionForm {
+            visibility: Some(self.visibility.clone()),
+            original_form: models::OriginalForm {
+                original_type: None,
+                data: input
+            }
+        };
+        out!(cli, "pushing to {}/{}:{}", org, app, version);
+        Ok(cli_try!(cli.versions()
+            .put_by_organization_key_and_application_key_and_version(
+                org, app, version, form)))
+    }
+
+    fn parse_json(&self, status: StatusCode, json: Json) -> CliResult<<Push as Task>::Result> {
+        let mut decoder = json::Decoder::new(json);
+        Ok(cli_try!(match status {
+            hyper::Ok => models::Version::decode(&mut decoder).map(|v| Ok(v)),
+            _ => Vec::<models::Error>::decode(&mut decoder).map(|e| Err(e))
+        }))
+    }
+
+    fn handle_result(&self, cli: &mut Cli, result: <Push as Task>::Result) -> CliResult<()> {
+        match result {
+            Ok(_) => Ok(()),
+            Err(errors) => {
+                for error in errors {
+                    err!(cli, "error: {}", error.message);
+                }
+                Err(CliError { desc: "got error response from server".to_string() })
+            }
+        }
     }
 }
