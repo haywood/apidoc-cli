@@ -1,2 +1,7 @@
 language: rust
 script: make test
+before_install:
+- openssl aes-256-cbc -K $encrypted_2b44ddd24400_key -iv $encrypted_2b44ddd24400_iv
+  -in config.toml.enc -out config.toml -d
+- mkdir $HOME/.apidoc
+- mv config.toml $HOME/.apidoc/config
