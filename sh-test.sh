@@ -4,6 +4,7 @@ cd $(dirname $0)
 ROOT=$(pwd -P)
 # put built CLI on path
 export PATH="$ROOT/bin:$PATH"
+export PS4='(${BASH_SOURCE}:${LINENO}): '
 cd sh-test
 for example in *; do
   if [ -d $example ]; then

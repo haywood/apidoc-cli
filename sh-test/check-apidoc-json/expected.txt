@@ -1,1 +1,1 @@
-+ apidoc check apidoc.json
+(run.sh:1): apidoc check apidoc.json
