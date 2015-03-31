@@ -1,0 +1,3 @@
++ apidoc check /dev/null
+validation error: No Data
+input invalid

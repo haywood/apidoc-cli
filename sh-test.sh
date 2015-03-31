@@ -2,11 +2,14 @@
 
 cd $(dirname $0)
 ROOT=$(pwd -P)
-LOG="$ROOT/sh-test.log"
+# put built CLI on path
 export PATH="$ROOT/bin:$PATH"
 cd sh-test
-echo "log file is $LOG"
-for file in **.sh; do
-  echo "Running $file"
-  bash -ex $file 2>> $LOG >> $LOG
+for example in *; do
+  if [ -d $example ]; then
+    pushd $example
+      echo "Running example in $example"
+      bash -ex run.sh 2>&1 | diff expected.txt -
+    popd
+  fi
 done
