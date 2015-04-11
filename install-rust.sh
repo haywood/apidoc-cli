@@ -1,4 +1,3 @@
 set -x
-cd /tmp
-curl -s -O https://static.rust-lang.org/rustup.sh
-sudo sh rustup.sh --channel=nightly
+curl -s -o /tmp/rustup.sh https://static.rust-lang.org/rustup.sh
+sh /tmp/rustup.sh --channel=nightly --prefix=$PWD/.rust --save

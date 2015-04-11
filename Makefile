@@ -20,18 +20,15 @@ $(test):
 	cd sh-test/$(test) && PS4='($$$${BASH_SOURCE}:$$$${LINENO}): ' bash -ex run.sh 2>&1 | diff expected.txt -
 endef
 
-$(foreach triple, $(triples), $(eval $(call make-release-target, triple)))
-$(foreach test, $(tests), $(eval $(call make-test-target, test)))
-
 build: rustc
 	cargo build
 
 test: build $(tests)
 	@echo $(tests)
 
-rustc: /usr/local/bin/rustc
+rustc: .rust/bin/rustc
 
-/usr/local/bin/rustc:
+.rust/bin/rustc:
 	bash install-rust.sh
 
 clean:
@@ -41,3 +38,7 @@ clean:
 	mkdir -p .rust/lib
 
 release: $(triples)
+
+$(foreach triple, $(triples), $(eval $(call make-release-target, triple)))
+
+$(foreach test, $(tests), $(eval $(call make-test-target, test)))
