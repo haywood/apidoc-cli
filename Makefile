@@ -24,7 +24,7 @@ $(test):
 endef
 
 build: rustc
-	.rust/bin/cargo build
+	.rust/bin/cargo build --verbose
 
 test: build $(tests)
 
@@ -34,7 +34,7 @@ rustc: .rust/bin/rustc
 	bash install-rust.sh
 
 clean:
-	.rust/bin/cargo clean
+	.rust/bin/cargo clean --verbose
 
 release: $(triples)
 
