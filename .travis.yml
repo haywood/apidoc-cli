@@ -1,6 +1,5 @@
 sudo: required
 language: c
-compiler: clang
 script: make test clean release
 before_install:
 - openssl aes-256-cbc -K $encrypted_2b44ddd24400_key -iv $encrypted_2b44ddd24400_iv
