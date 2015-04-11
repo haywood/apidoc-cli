@@ -9,7 +9,7 @@ define make-release-target
 $(triple): target/$(triple)/release/apidoc
 
 target/$(triple)/release/apidoc: | rustc .rust/lib/$(triple)
-	cargo build --release --target $(triple)
+	cargo build --verbose --release --target $(triple)
 
 .rust/lib/$(triple): | rustc .rust/lib
 	triple=$(triple) bash install-triple.sh
