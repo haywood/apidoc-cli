@@ -1,6 +1,6 @@
 sudo: required
 language: c
-script: make test clean release
+script: make test release
 before_install:
 - openssl aes-256-cbc -K $encrypted_2b44ddd24400_key -iv $encrypted_2b44ddd24400_iv
   -in config.toml.enc -out config.toml -d
@@ -12,8 +12,7 @@ deploy:
   api_key:
     secure: SgbP+7gmQTfA490DwWvx0xFzmP8c2ub1LNNf2WTc9NLYAGi4psTAbU8d0XVHLqb/71QJTedVGZqoDzTdDw7Mva6V43Z/0v5y9RyhaC77j3iccf4AhFG5dv6g7rEs7uShuhO77NTbAIzGc0wRtvd0kJfGl0WHgzjqj9DiJ4tO4v8=
   file:
-    - target/x86_64-apple-darwin/release/apidoc
-    - target/x86_64-unknown-linux-gnu/release/apidoc
+    - target/release/apidoc
   skip_cleanup: true
   on:
     repo: haywood/apidoc-cli
