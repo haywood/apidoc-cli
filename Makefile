@@ -25,6 +25,9 @@ clean:
 	.rust/bin/cargo clean --verbose
 
 release:
-	cargo build --release --verbose
+	.rust/bin/cargo build --release --verbose
+
+update:
+	.rust/bin/cargo update
 
 $(foreach test, $(tests), $(eval $(call make-test-target, test)))
