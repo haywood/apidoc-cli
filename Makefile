@@ -21,13 +21,13 @@ rustc: .rust/bin/rustc
 .rust/bin/rustc:
 	bash install-rust.sh
 
-clean:
+clean: rustc
 	.rust/bin/cargo clean --verbose
 
-release:
+release: rustc
 	.rust/bin/cargo build --release --verbose
 
-update:
+update: rustc
 	.rust/bin/cargo update
 
 $(foreach test, $(tests), $(eval $(call make-test-target, test)))
