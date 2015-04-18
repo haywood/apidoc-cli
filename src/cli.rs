@@ -134,17 +134,37 @@ pub struct Revision<'a>(Repo<'a>, &'a str);
 
 impl <'a> Revision<'a> {
     fn from_str(tag: &'a str) -> Result<Revision<'a>, CliError> {
-        let Repo(org, repo_app) = cli_try!(Repo::from_str(tag));
+        let Repo(org, rest) = cli_try!(Repo::from_str(tag));
         let colon_idx = cli_opt!(
-            repo_app.find(':'), "failed to locate `:` in {}", tag);
-        let app = &repo_app[..colon_idx];
-        let version = &repo_app[colon_idx + 1..];
+            rest.find(':'), "failed to locate `:` in {}", tag);
+        let app = &rest[..colon_idx];
+        let version = &rest[colon_idx + 1..];
         if app.is_empty() {
             Err(CliError { desc: format!("application was empty in tag: {}", tag) })
         } else if version.is_empty() {
             Err(CliError { desc: format!("version was empty in tag: {}", tag) })
         } else {
             Ok(Revision(Repo(org, app), version))
+        }
+    }
+}
+
+pub struct GenerateTarget<'a>(Revision<'a>, &'a str);
+
+impl <'a> GenerateTarget<'a> {
+    fn from_str(tag: &'a str) -> Result<GenerateTarget<'a>, CliError> {
+        let Revision(repo, rest) = cli_try!(Revision::from_str(tag));
+        let slash_idx = cli_opt!(
+            rest.find('/'),
+            "failed to locate `/` in {}", rest);
+        let version = &rest[..slash_idx];
+        let target = &rest[slash_idx + 1..];
+        if version.is_empty() {
+            Err(CliError { desc: format!("version was empty in tag: {}", tag) })
+        } else if target.is_empty() {
+            Err(CliError { desc: format!("target was empty in tag: {}", tag) })
+        } else {
+            Ok(GenerateTarget(Revision(repo, version), target))
         }
     }
 }
@@ -206,8 +226,10 @@ impl Cli {
         task.run(self)
     }
 
-    pub fn generate(&mut self, tag: &str, target: &str) -> Result<(), CliError> {
-        let task = Generate { tag: tag, target: target };
+    pub fn generate(&mut self, tag: &str) -> Result<(), CliError> {
+        let task = Generate {
+            target: cli_try!(GenerateTarget::from_str(tag))
+        };
         task.run(self)
     }
 
@@ -303,21 +325,20 @@ impl<'a> Task for Check<'a> {
     }
 }
 
-struct Generate<'a, 'b> {
-    tag: &'a str,
-    target: &'b str
+struct Generate<'a> {
+    target: GenerateTarget<'a>
 }
 
-impl<'a, 'b> Task for Generate<'a, 'b> {
+impl<'a> Task for Generate<'a> {
     type Result = StdResult<models::Code, Vec<models::Error>>;
 
     fn perform_request(&self, cli: &mut Cli) -> CliResult<Response> {
-        let Revision(Repo(org, app), version) = cli_try!(
-            Revision::from_str(self.tag));
+        let GenerateTarget(Revision(Repo(org, app), version), target) = self.target;
         let client = cli.code();
+        out!(cli, "getting code for {}/{}:{}/{}", org, app, version, target);
         Ok(cli_try!(
             client.get_by_organization_key_and_application_key_and_version_and_generator_key(
-                org, app, version, self.target)))
+                org, app, version, target)))
     }
 
     fn parse_json(&self, status: StatusCode, json: Json) -> CliResult<<Generate as Task>::Result> {

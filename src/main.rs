@@ -16,7 +16,6 @@ mod cli;
 struct Args {
     arg_input: Option<String>,
     arg_tag: String,
-    arg_target: String,
 
     cmd_check: bool,
     cmd_generate: bool,
@@ -42,7 +41,7 @@ fn main() {
     let usage = format!("
 Usage:
     apidoc [options] check [<input>]
-    apidoc [options] generate <tag> <target>
+    apidoc [options] generate <tag>
     apidoc [options] push <tag> [<input>]
     apidoc --help
 
@@ -64,8 +63,7 @@ Options:
             cli.check(args.spec())
         } else if args.cmd_generate {
             let ref tag = args.arg_tag;
-            let ref target = args.arg_target;
-            cli.generate(tag, target)
+            cli.generate(tag)
         } else if args.cmd_push {
             let ref tag = args.arg_tag;
             cli.push(tag, args.spec(), &args.flag_visibility)

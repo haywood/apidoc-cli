@@ -239,9 +239,7 @@ pub mod models {
         pub name: String,
         pub language: Option<String>,
         pub description: Option<String>,
-        pub visibility: Visibility,
-        pub owner: User,
-        pub enabled: bool
+        pub visibility: Visibility
     }
 
     /**
