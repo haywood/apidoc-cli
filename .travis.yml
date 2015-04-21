@@ -7,13 +7,15 @@ before_install:
 - mkdir $HOME/.apidoc
 - mv config.toml $HOME/.apidoc/config
 
+before_deploy:
+  - cp target/release/apidoc /tmp/apidoc-x86_64-unknown-linux-gnu
+
 deploy:
   provider: releases
   api_key:
     secure: SgbP+7gmQTfA490DwWvx0xFzmP8c2ub1LNNf2WTc9NLYAGi4psTAbU8d0XVHLqb/71QJTedVGZqoDzTdDw7Mva6V43Z/0v5y9RyhaC77j3iccf4AhFG5dv6g7rEs7uShuhO77NTbAIzGc0wRtvd0kJfGl0WHgzjqj9DiJ4tO4v8=
   file:
-    - target/release/apidoc
-  skip_cleanup: true
+    - /tmp/apidoc-x86_64-unknown-linux-gnu
   on:
     repo: haywood/apidoc-cli
     tags: true
