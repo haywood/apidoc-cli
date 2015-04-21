@@ -1,4 +1,3 @@
-sudo: required
 language: c
 script: make test release
 before_install:
