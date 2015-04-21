@@ -50,6 +50,21 @@ Options:
     --visibility <visibility>   [Default: user]
     --profile <profile>         [Default: default]
     --help, -h  Print this help.
+
+check - validate <input> against api.apidoc.me/validations.
+    <input> is a path to a JSON description of a service.
+    <input> defaults to api.json.
+
+generate - generate code based on <tag>.
+    <tag> is of the form <organization_key>/<application_key>:<version>/<generator_key>.
+        e.g. gilt/apidoc-api:0.9.6/play_2_3_client
+        e.g. gilt/apidoc-api:latest/play_2_3_client
+
+push - push a new revision to <tag> using <input>.
+    <tag> is of the form <organization_key>/<application_key>:<version>.
+        e.g. gilt/apidoc-api:0.9.6
+    <input> is a path to a JSON description of a service.
+    <input> defaults to api.json.
 ", home_dir.display());
 
     let args: Args = Docopt::new(usage)
