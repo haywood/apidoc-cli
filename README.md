@@ -20,13 +20,13 @@ e.g.
 
     wget https://github.com/haywood/apidoc-cli/releases/download/<version>/apidoc-x86_64-unknown-linux-gnu
     chmod +x apidoc-x86_64-unknown-linux-gnu
-    sudo mv apidoc-x86_64-unknown-linux-gnu /usr/local/bin/apidoc-x86_64-unknown-linux-gnu
+    sudo mv apidoc-x86_64-unknown-linux-gnu /usr/local/bin/apidoc
 
 e.g.
 
     wget https://github.com/haywood/apidoc-cli/releases/download/0.0.3/apidoc-x86_64-unknown-linux-gnu
     chmod +x apidoc-x86_64-unknown-linux-gnu
-    sudo mv apidoc-x86_64-unknown-linux-gnu /usr/local/bin/apidoc-x86_64-unknown-linux-gnu
+    sudo mv apidoc-x86_64-unknown-linux-gnu /usr/local/bin/apidoc
 
 ## Usage
 
