@@ -1,5 +1,5 @@
 language: c
-script: make test release
+script: make test
 before_install:
 - openssl aes-256-cbc -K $encrypted_2b44ddd24400_key -iv $encrypted_2b44ddd24400_iv
   -in config.toml.enc -out config.toml -d
@@ -7,7 +7,7 @@ before_install:
 - mv config.toml $HOME/.apidoc/config
 
 before_deploy:
-  - cp target/release/apidoc /tmp/apidoc-x86_64-unknown-linux-gnu
+  - ./release.sh
 
 deploy:
   provider: releases
