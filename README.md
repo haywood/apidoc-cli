@@ -12,7 +12,7 @@ This is a CLI for working with [apidoc](api.apidoc.me).
 
 e.g.
 
-    wget https://github.com/haywood/apidoc-cli/releases/download/0.0.3/apidoc-x86_64-apple-darwin
+    wget https://github.com/haywood/apidoc-cli/releases/download/0.0.4/apidoc-x86_64-apple-darwin
     chmod +x apidoc-x86_64-apple-darwin
     sudo mv apidoc-x86_64-apple-darwin /usr/local/bin/apidoc
 
@@ -24,7 +24,7 @@ e.g.
 
 e.g.
 
-    wget https://github.com/haywood/apidoc-cli/releases/download/0.0.3/apidoc-x86_64-unknown-linux-gnu
+    wget https://github.com/haywood/apidoc-cli/releases/download/0.0.4/apidoc-x86_64-unknown-linux-gnu
     chmod +x apidoc-x86_64-unknown-linux-gnu
     sudo mv apidoc-x86_64-unknown-linux-gnu /usr/local/bin/apidoc
 
