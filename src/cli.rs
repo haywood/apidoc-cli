@@ -335,7 +335,7 @@ impl<'a> Task for Generate<'a> {
     fn perform_request(&self, cli: &mut Cli) -> CliResult<Response> {
         let GenerateTarget(Revision(Repo(org, app), version), target) = self.target;
         let client = cli.code();
-        out!(cli, "getting code for {}/{}:{}/{}", org, app, version, target);
+        err!(cli, "getting code for {}/{}:{}/{}", org, app, version, target);
         Ok(cli_try!(
             client.get_by_organization_key_and_application_key_and_version_and_generator_key(
                 org, app, version, target)))
