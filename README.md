@@ -38,7 +38,7 @@ For more detailed usage information, just run `apidoc --help`.
 
 ## Configuration
 
-The API uses a simple [TOML](https://github.com/toml-lang/toml)
+The CLI uses a simple [TOML](https://github.com/toml-lang/toml)
 configuration located at `~/.apidoc/config` by default.
 Configuration is done using profiles similar to those used by
 [Amazon Web Services](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-multiple-profiles).
