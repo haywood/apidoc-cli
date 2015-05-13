@@ -24,6 +24,9 @@ rustc: .rust/bin/rustc
 clean: rustc
 	.rust/bin/cargo clean --verbose
 
+distclean: clean
+	rm -rf .rust
+
 release: rustc
 	.rust/bin/cargo build --release --verbose
 

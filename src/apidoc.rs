@@ -22,7 +22,7 @@ pub mod client {
             application_key: &str,
             version: &str,
             generator_key: &str
-        ) -> hyper::HttpResult<hyper::client::Response> {
+        ) -> hyper::error::Result<hyper::client::Response> {
             let mut client = hyper::client::Client::new();
             let mut url = self.base_url.clone();
             url.push('/');
@@ -37,9 +37,9 @@ pub mod client {
                 username: self.token.clone(),
                 password: None
             };
-            client.get(&url[..])
-                .header(hyper::header::Authorization(scheme))
-                .send()
+            let req = client.get(&url[..])
+                .header(hyper::header::Authorization(scheme));
+            req.send()
         }
     }
 
@@ -54,11 +54,12 @@ pub mod client {
             }
         }
 
-        pub fn post(&self, value: &str) -> hyper::HttpResult<hyper::client::Response> {
+        pub fn post(&self, value: &str) -> hyper::error::Result<hyper::client::Response> {
             let mut client = hyper::client::Client::new();
             let mut url = self.base_url.clone();
             url.push_str("/validations");
-            client.post(&url[..]).body(value).send()
+            let req = client.post(&url[..]).body(value);
+            req.send()
         }
     }
 
@@ -81,7 +82,7 @@ pub mod client {
             application_key: &str,
             version: &str,
             version_form: models::VersionForm
-        ) -> hyper::HttpResult<hyper::client::Response> {
+        ) -> hyper::error::Result<hyper::client::Response> {
             let mut client = hyper::client::Client::new();
             let mut url = self.base_url.clone();
             url.push('/');
@@ -95,10 +96,10 @@ pub mod client {
                 username: self.token.clone(),
                 password: None
             };
-            client.put(&url[..]).body(&json[..])
+            let req = client.put(&url[..]).body(&json[..])
                 .header(hyper::header::Authorization(scheme))
-                .header(hyper::header::ContentType(application_json()))
-                .send()
+                .header(hyper::header::ContentType(application_json()));
+            req.send()
         }
     }
 
